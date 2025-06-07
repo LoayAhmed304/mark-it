@@ -1,0 +1,60 @@
+.animated-logo {
+  font-family: 'Courier New', monospace;
+  font-size: 35px;
+  font-weight: bold;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  min-width: 200px;
+}
+
+.plain-text {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.markdown-heading,
+.markdown-bold,
+.markdown-final {
+  animation: fadeIn 0.5s ease-in;
+  display: flex;
+}
+
+.md-symbol {
+  color: #6a737d;
+  font-weight: bold;
+}
+
+.markdown-final .text-mark {
+  font-weight: bold;
+}
+
+.markdown-final .text-together {
+  color: #0366d6;
+}
+
+.markdown-bold span {
+  animation: pulse 1s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
