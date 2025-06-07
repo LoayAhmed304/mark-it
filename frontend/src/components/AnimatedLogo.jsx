@@ -14,7 +14,7 @@ const AnimatedLogo = () => {
   }, []);
 
   return (
-    <div className="animated-logo">
+    <div className="animated-logo flex flex-col">
       {stage === 0 && <div className="plain-text">MarkTogether</div>}
 
       {stage === 1 && (
@@ -40,6 +40,11 @@ const AnimatedLogo = () => {
           <span className="text-together">Together</span>
         </div>
       )}
+      <div>
+        <h1 className="text-3xl text-primary font-sans">
+          A Cross-Platform Markdown Editor
+        </h1>
+      </div>
     </div>
   );
 };
