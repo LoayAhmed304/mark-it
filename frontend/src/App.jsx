@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import { LoaderCircle } from 'lucide-react';
 import { useAuthStore } from './stores/authStore';
+import SignupPage from './pages/SignupPage';
 
 function App() {
   const { authUser, isCheckingAuth } = useAuthStore();
@@ -19,6 +20,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={authUser ? <HomePage /> : <LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/login"
+          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+        />
       </Routes>
       <Toaster />
     </BrowserRouter>
