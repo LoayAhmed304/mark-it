@@ -19,7 +19,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={authUser ? <HomePage /> : <LoginPage />} />
+        <Route
+          path="/"
+          element={authUser ? <HomePage /> : <Navigate to="/login" />}
+        />
         <Route path="/signup" element={<SignupPage />} />
         <Route
           path="/login"
