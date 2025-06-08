@@ -6,7 +6,7 @@ import HomePage from './pages/HomePage';
 import { LoaderCircle } from 'lucide-react';
 import { useAuthStore } from './stores/authStore';
 import SignupPage from './pages/SignupPage';
-
+import DocumentPage from './pages/DocumentPage';
 function App() {
   const { authUser, isCheckingAuth } = useAuthStore();
   if (!authUser && isCheckingAuth) {
@@ -25,6 +25,10 @@ function App() {
         />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/document/:id"
+          element={authUser ? <DocumentPage /> : <Navigate to="/login" />}
+        />
       </Routes>
       <Toaster />
     </BrowserRouter>

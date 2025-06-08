@@ -1,52 +1,44 @@
 import React from 'react';
 import { Plus, LoaderCircle } from 'lucide-react';
 import { useDocumentStore } from '../stores/documentStore';
-
-const docs = [
-  {
-    title: 'My First Document',
-    content: 'This is the content of my first document.',
-  },
-  {
-    title: 'My Second Document',
-    content: 'This is the content of my second document.',
-  },
-  {
-    title: 'My Third Document',
-    content: 'This is the content of my third document.',
-  },
-  {
-    title: 'My Fourth Document',
-    content: 'This is the content of my fourth document.',
-  },
-];
+import { useAuthStore } from '../stores/authStore';
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
-  const [documents, setDocuments] = React.useState(docs);
-  const { isLoading, currentDocument, load, add, isCreatingDocument } =
-    useDocumentStore();
-
+  const navigate = useNavigate();
+  const { documents, isCreatingDocument } = useDocumentStore();
+  const { getUserDocuments, addUserDocument, gettingDocuments } =
+    useAuthStore();
   const [formData, setFormData] = React.useState({
     title: '',
   });
 
-  const handleLoad = (e) => {
+  React.useEffect(() => {
+    getUserDocuments();
+  }, []);
+
+  const handleLoad = (id) => {
     console.log('Loading document');
-    e.preventDefault();
-    load();
+    navigate(`/document/${id}`);
     // TODO: Implement the logic to load the document
   };
 
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      await add(formData, setFormData, setDocuments);
+      const newDocId = await addUserDocument(formData);
+      setFormData({ title: '' }); // Reset form
+
+      // Navigate to the new document after creation
+      if (newDocId) {
+        navigate(`/document/${newDocId}`);
+      }
     } catch (error) {
       console.error('Failed to create document:', error);
     }
   };
 
-  if (isLoading && currentDocument === null) {
+  if (gettingDocuments && documents.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
         <LoaderCircle className="size-15 animate-spin" />
@@ -56,15 +48,21 @@ const HomePage = () => {
 
   return (
     <div className="grid grid-cols-1 mx-auto md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {documents.map((doc, index) => (
+      {documents.map((doc) => (
         <div
           className="flex card bg-base-100 w-96 shadow-sm items-center"
-          key={index}
+          key={doc.id}
         >
           <div className="card-body">
             <h2 className="card-title text-center">{doc.title}</h2>
             <div className="card-actions justify-center">
-              <button className="btn btn-primary" onClick={handleLoad}>
+              <button
+                className="btn btn-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLoad(doc.id);
+                }}
+              >
                 Load
               </button>
             </div>

@@ -1,10 +1,35 @@
 import { create } from 'zustand';
+import { useDocumentStore } from './documentStore';
 import toast from 'react-hot-toast';
+
+const docs = [
+  {
+    id: 'hffcv',
+    title: 'My First Document',
+    content: 'This is the content of my first document.',
+  },
+  {
+    id: 'hffcv2',
+    title: 'My Second Document',
+    content: 'This is the content of my second document.',
+  },
+  {
+    id: 'hffcv3',
+    title: 'My Third Document',
+    content: 'This is the content of my third document.',
+  },
+  {
+    id: 'hffcv4',
+    title: 'My Fourth Document',
+    content: 'This is the content of my fourth document.',
+  },
+];
 
 export const useAuthStore = create((set, get) => ({
   authUser: true,
   isSigningUp: false,
   isLoggingIn: false,
+  gettingDocuments: false,
   login: async (formData) => {
     set({ isLoggingIn: true });
     // Rest of the login logic code here
@@ -47,5 +72,40 @@ export const useAuthStore = create((set, get) => ({
     } finally {
       set({ isSigningUp: false });
     }
+  },
+
+  getUserDocuments: async () => {
+    set({ gettingDocuments: true });
+    try {
+      // Implement logic to fetch user documents from the server
+      toast.success('Documents fetched successfully!');
+      const { setDocuments } = useDocumentStore.getState();
+      setDocuments(docs);
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+      toast.error(
+        err.response?.data?.message ||
+          'Failed to fetch documents. Please try again.',
+      );
+    } finally {
+      set({ gettingDocuments: false });
+    }
+  },
+
+  addUserDocument: (formData) => {
+    const { add } = useDocumentStore.getState();
+    // Add document and get the new ID
+    const newId = add(formData);
+    
+    // Sync with local docs array if needed
+    if (newId) {
+      docs.push({
+        id: newId,
+        title: formData.title,
+        content: '',
+      });
+    }
+    
+    return newId; // Return the ID for navigation
   },
 }));
