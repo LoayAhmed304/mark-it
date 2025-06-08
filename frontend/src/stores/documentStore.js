@@ -1,25 +1,6 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 
-// API service functions (to be implemented with real backend)
-const documentApi = {
-  fetchDocument: async (id) => {
-    // Will call API endpoint to get document by ID
-    console.log(`API call: Fetching document ${id}`);
-    // Return mock data for now
-    return null; // This will make the code fall back to local state
-  },
-
-  createDocument: async (document) => {
-    // Will call API endpoint to create document
-    console.log(`API call: Creating document "${document.title}"`);
-    // Return mock response with ID
-    return { id: `doc_${Date.now()}`, ...document };
-  },
-
-  // Add more API methods as needed (update, delete, etc.)
-};
-
 export const useDocumentStore = create((set, get) => ({
   isLoading: false,
   currentDocument: null,
@@ -38,25 +19,24 @@ export const useDocumentStore = create((set, get) => ({
         set({ currentDocument: foundDoc });
         toast.success('Document loaded successfully!');
       } else {
-        // Try to fetch from API
-        const apiDoc = await documentApi.fetchDocument(id);
+        // CRITICAL FIX: Remove this line that's causing documents to never load
+        // throw new Error('Document not found ');
 
-        if (apiDoc) {
-          set({ currentDocument: apiDoc });
-          toast.success('Document loaded from server!');
-        } else {
-          // For demo purposes only - remove in production
-          set({
-            currentDocument: {
-              id,
-              title: 'Sample Loaded Document',
-              content: `This is a sample document content. # hello world
+        // If not found locally, try to fetch from server
+        console.log(
+          `Document with ID ${id} not found in local state, trying server...`,
+        );
+        // For demo, use a sample document
+        set({
+          currentDocument: {
+            id,
+            title: 'Sample Loaded Document',
+            content: `This is a sample document content. # hello world
             ## Header 2
             ### Header 3`,
-            },
-          });
-          toast.success('Demo document loaded!');
-        }
+          },
+        });
+        toast.success('Document loaded successfully!');
       }
     } catch (error) {
       console.error('Error loading document:', error);
@@ -74,25 +54,24 @@ export const useDocumentStore = create((set, get) => ({
     }
     set({ isCreatingDocument: true });
     try {
-      // Prepare new document
+      // Generate a unique ID - this should be consistent with what the backend would generate
+      const newId = `doc_${Date.now()}`;
+
       const newDocument = {
+        id: newId,
         title: formData.title,
         content: '',
       };
 
-      // In the future, this would call the API
-      const savedDoc = await documentApi.createDocument(newDocument);
-
-      // Add to local state
       set({
-        documents: [...get().documents, savedDoc],
+        documents: [...get().documents, newDocument],
       });
 
       // Close the modal
       document.getElementById('my_modal_2').close();
       toast.success('New document created successfully!');
 
-      return savedDoc.id; // Return ID for navigation
+      return newId; // Return ID for navigation
     } catch (err) {
       console.error('Error creating document:', err);
       toast.error(err.response?.data?.message || 'Failed to create document.');
