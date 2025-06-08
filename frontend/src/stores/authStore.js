@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import toast from 'react-hot-toast';
 
 export const useAuthStore = create((set, get) => ({
-  authUser: null,
+  authUser: true,
   isSigningUp: false,
   isLoggingIn: false,
   login: async (formData) => {

@@ -24,10 +24,7 @@ function App() {
           element={authUser ? <HomePage /> : <Navigate to="/login" />}
         />
         <Route path="/signup" element={<SignupPage />} />
-        <Route
-          path="/login"
-          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
-        />
+        <Route path="/login" element={<LoginPage />} />
       </Routes>
       <Toaster />
     </BrowserRouter>
