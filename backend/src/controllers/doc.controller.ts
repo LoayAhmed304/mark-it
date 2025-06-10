@@ -221,7 +221,7 @@ export const getDocument = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { docId } = req.params;
+  const { id: docId } = req.params;
   const doc_id = ObjectId.isValid(docId) ? docId : null;
   try {
     const document = await Document.findById(doc_id);
@@ -232,8 +232,9 @@ export const getDocument = async (
       });
       return;
     }
+    const user = req.user;
 
-    if (document.authorId !== req.user?._id) {
+    if (document.authorId.toString() != user._id.toString()) {
       if (document.collaborative === false) {
         res.status(403).json({
           status: 'fail',

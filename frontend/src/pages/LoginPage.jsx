@@ -17,7 +17,7 @@ const LoginPage = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     const status = login(formData);
-    if (status) {
+    if (status === true) {
       setFormData({
         email: '',
         password: '',

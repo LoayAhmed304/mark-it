@@ -6,11 +6,13 @@ import {
   deleteDocument,
   updateDocument,
   saveDocumentContent,
+  getDocument,
 } from '../controllers/doc.controller.js';
 
 const router = express.Router();
 router.use(protect);
 router.get('/', getUserDocuments);
+router.get('/:id', getDocument);
 router.post('/', createDocument);
 router.delete('/:id', deleteDocument);
 router.patch('/:id', updateDocument);

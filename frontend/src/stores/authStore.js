@@ -55,20 +55,19 @@ export const useAuthStore = create(
     },
 
     login: async (formData) => {
-      set({ isLoggingIn: true });
-
       if (!formData.email || !formData.password) {
         toast.error('Please fill in all fields');
-        return;
+        return false;
       }
       if (!/\S+@\S+\.\S+/.test(formData.email)) {
         toast.error('Please enter a valid email address');
-        return;
+        return false;
       }
       if (formData.password.length < 6) {
         toast.error('Password must be at least 6 characters long');
-        return;
+        return false;
       }
+      set({ isLoggingIn: true });
       try {
         // Implement login here (API)
         const response = await axiosInstance.post('/auth/login', formData);
@@ -112,12 +111,27 @@ export const useAuthStore = create(
       }
     },
 
+    logout: async () => {
+      try {
+        await axiosInstance.post('/auth/logout');
+        set({ authUser: null });
+        toast.success('Logged out successfully!');
+      } catch (err) {
+        console.error('Error during logout:', err);
+        toast.error(
+          err.response?.data?.message || 'Logout failed. Please try again.',
+        );
+      }
+    },
+
     getUserDocuments: async () => {
       set({ gettingDocuments: true });
       try {
         // Implement logic to fetch user documents from the server
         const { setDocuments } = useDocumentStore.getState();
-        setDocuments(docs);
+        const response = await axiosInstance.get('/documents');
+        console.log('Fetched documents:', response.data.data.documents);
+        setDocuments(response.data.data.documents || []);
       } catch (err) {
         console.error('Error fetching documents:', err);
         toast.error(

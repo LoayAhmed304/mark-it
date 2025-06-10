@@ -8,6 +8,7 @@ import { LoaderCircle } from 'lucide-react';
 import { useAuthStore } from './stores/authStore';
 import SignupPage from './pages/SignupPage';
 import DocumentPage from './pages/DocumentPage';
+import Navbar from './components/Navbar';
 function App() {
   const { authUser, isCheckingAuth, checkAuth } = useAuthStore();
 
@@ -24,6 +25,7 @@ function App() {
   }
   return (
     <BrowserRouter>
+      <Navbar />
       <Routes>
         <Route
           path="/"

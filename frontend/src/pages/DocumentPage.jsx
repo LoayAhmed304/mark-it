@@ -28,7 +28,7 @@ const DocumentPage = () => {
   if (error) {
     console.error('Error loading document IN DOC PAGE:', error);
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <p className="text-error-500">
           Error loading document. Please try again.
         </p>
@@ -38,7 +38,7 @@ const DocumentPage = () => {
   if (isLoading && !currentDocument) {
     console.log('Loading document...');
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <LoaderCircle className="size-15 animate-spin" />
       </div>
     );
@@ -46,20 +46,20 @@ const DocumentPage = () => {
 
   if (!currentDocument) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <p className="text-error-500">Document not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col bg-base-300 justify-center items-center max-w mx-auto p-10 h-screen">
+    <div className="flex flex-col bg-base-300 items-center w-full max-w-full p-5 pt-5 min-h-[calc(100vh-64px)]">
       {/* Settings Navbar Buttons */}
-      <div className="flex justify-between w-full pr-10 pl-10">
+      <div className="flex justify-between w-full px-4 md:px-10 mb-4">
         <button className="btn btn-warning" onClick={handleTerminate}>
           Terminate Session
         </button>
-        <div className="flex justify-end space-x-10 w-full pr-10">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-4">
           <button className="btn btn-success" onClick={handleSave}>
             Save
           </button>
@@ -68,27 +68,26 @@ const DocumentPage = () => {
           </button>
         </div>
       </div>
-      <h1 className="text-primary text-3xl font-semibold font-sans font-family-sans">
+      <h1 className="text-primary text-3xl font-semibold mb-4">
         {currentDocument.title}
       </h1>
-      <div className="flex flex-row max-w space-x-10 justify-around w-full p-10 h-full">
-        <div className="flex justify-center items-start h-full w-full">
+      <div className="flex flex-col md:flex-row gap-6 w-full px-4 md:px-10 flex-grow">
+        <div className="flex-1">
           <fieldset className="fieldset w-full">
             <legend className="fieldset-legend">Document</legend>
             <textarea
-              className="textarea w-full h-80 md:h-120"
+              className="textarea w-full h-[60vh]"
               placeholder="Type your document content here..."
-            >
-              {currentDocument.content}
-            </textarea>
+              defaultValue={currentDocument.content}
+            />
           </fieldset>
         </div>
 
-        <div className="flex justify-center items-start w-full">
+        <div className="flex-1">
           <fieldset className="fieldset w-full">
             <legend className="fieldset-legend">Preview</legend>
             <div
-              className="p-4 bg-accent border rounded h-80 overflow-auto prose md:h-120"
+              className="p-4 bg-accent border rounded h-[60vh] overflow-auto prose"
               id="markdown-preview"
               dangerouslySetInnerHTML={{ __html: currentDocument.content }}
             />
