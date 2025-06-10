@@ -5,9 +5,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import authRoutes from './routes/auth.route.js';
 import docRoutes from './routes/doc.route.js';
+import { app, serverHttp } from './socket.js'; // Adjust the import path as necessary
 dotenv.config();
-
-const app = express();
 
 app.use(
   cors({
@@ -21,7 +20,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', docRoutes);
-app.listen(process.env.PORT || 5000, () => {
+serverHttp.listen(process.env.PORT || 5000, () => {
   console.log('Server listening on port ', process.env.PORT || 5000);
   connectDB();
 });

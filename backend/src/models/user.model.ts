@@ -1,8 +1,9 @@
 import mongoose, { Document } from 'mongoose';
-
+import { ObjectId } from 'mongodb';
 export interface UserDocument extends Document {
   username: string;
   email: string;
+  _id: ObjectId;
 }
 
 const userSchema = new mongoose.Schema(
