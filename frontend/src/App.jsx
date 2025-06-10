@@ -1,4 +1,5 @@
 import './App.css';
+import { useEffect } from 'react';
 import LoginPage from './pages/LoginPage';
 import { Toaster } from 'react-hot-toast';
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
@@ -8,8 +9,13 @@ import { useAuthStore } from './stores/authStore';
 import SignupPage from './pages/SignupPage';
 import DocumentPage from './pages/DocumentPage';
 function App() {
-  const { authUser, isCheckingAuth } = useAuthStore();
-  if (!authUser && isCheckingAuth) {
+  const { authUser, isCheckingAuth, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isCheckingAuth) {
     return (
       <div className="flex justify-center items-center h-screen">
         <LoaderCircle className="size-15 animate-spin" />
@@ -23,8 +29,14 @@ function App() {
           path="/"
           element={authUser ? <HomePage /> : <Navigate to="/login" />}
         />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/signup"
+          element={authUser ? <Navigate to="/" /> : <SignupPage />}
+        />
+        <Route
+          path="/login"
+          element={authUser ? <Navigate to="/" /> : <LoginPage />}
+        />
         <Route
           path="/document/:id"
           element={authUser ? <DocumentPage /> : <Navigate to="/login" />}

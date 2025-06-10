@@ -3,18 +3,27 @@ import { EyeClosed, Eye } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { Link } from 'react-router-dom';
 import AnimatedLogo from '../components/AnimatedLogo';
+import { useNavigate } from 'react-router-dom';
 const LoginPage = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({
     email: '',
     password: '',
   });
+  const navigate = useNavigate();
 
   const { login, isLoggingIn } = useAuthStore();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    login(formData);
+    const status = login(formData);
+    if (status) {
+      setFormData({
+        email: '',
+        password: '',
+      });
+      navigate('/');
+    }
   };
 
   return (

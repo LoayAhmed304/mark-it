@@ -2,11 +2,12 @@ import React from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { EyeClosed, Eye } from 'lucide-react';
 import AnimatedLogo from '../components/AnimatedLogo';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 const SignupPage = () => {
   const { isSigningUp, signup } = useAuthStore();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({
     username: '',
@@ -37,9 +38,21 @@ const SignupPage = () => {
     }
     return true;
   };
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    if (validateForm() === true) signup(formData);
+
+    if (validateForm() === true) {
+      const status = await signup(formData);
+      if (status) {
+        setFormData({
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+        });
+        navigate('/');
+      }
+    }
   };
   return (
     <div className="flex flex-col justify-between md:flex-row h-screen w-full">
