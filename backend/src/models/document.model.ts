@@ -15,6 +15,10 @@ const documentSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    collaborative: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
