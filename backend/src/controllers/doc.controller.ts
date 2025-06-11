@@ -140,8 +140,6 @@ export const updateDocument = async (
       return;
     }
 
-    console.log('doc_id:', doc_id);
-    console.log('user._id:', user._id);
     const updatedDocument = await Document.findOneAndUpdate(
       { _id: doc_id, authorId: user._id },
       { title, collaborative },
