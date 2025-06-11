@@ -127,4 +127,13 @@ export const useDocumentStore = create((set, get) => ({
       toast.error(err.response?.data?.message || 'Failed to delete document.');
     }
   },
+
+  updateCollabs: async (users) => {
+    set({
+      currentDocument: {
+        ...get().currentDocument,
+        collaborators: users,
+      },
+    });
+  },
 }));

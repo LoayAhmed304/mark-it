@@ -5,6 +5,7 @@ import { LoaderCircle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify'; // to snaitize the output
+import { socket } from '../sockets/socket';
 
 const DocumentPage = () => {
   const { id } = useParams();
@@ -15,6 +16,7 @@ const DocumentPage = () => {
     updateCollaboration,
     saveDocument,
     deleteDocument,
+    updateCollabs,
   } = useDocumentStore();
   const [error, setError] = useState(false);
   const { authUser, isCheckingAuth } = useAuthStore();
@@ -68,6 +70,14 @@ const DocumentPage = () => {
 
   useEffect(() => {
     marked.setOptions({ breaks: true, gfm: true });
+
+    return () => {
+      socket.emit('leave-doc', {
+        docId: currentDocument?._id || id,
+        user: authUser,
+      });
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -79,6 +89,18 @@ const DocumentPage = () => {
     const fetchDocument = async () => {
       try {
         await loadDocument(id);
+        socket.connect();
+        socket.emit('join-doc', {
+          docId: currentDocument?._id || id,
+          user: authUser,
+        });
+        socket.on('doc-users', (data) => {
+          updateCollabs(data);
+          console.log(
+            'Current users in document:',
+            currentDocument?.collaborators,
+          );
+        });
       } catch (err) {
         setError(true);
         console.error('Error loading document:', err);
