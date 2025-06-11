@@ -48,8 +48,6 @@ io.on('connection', (socket) => {
   socket.on(
     'update-doc',
     ({ docId, content }: { docId: string; content: string }) => {
-      console.log(`Document ${docId} updated with content: ${content}`);
-
       io.to(docId).emit('doc-updated', {
         docId,
         content,
