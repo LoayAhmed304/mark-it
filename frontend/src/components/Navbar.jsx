@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuthStore } from '../stores/authStore';
 
 const Navbar = () => {
-  const { logout } = useAuthStore();
+  const { logout, authUser } = useAuthStore();
   const handleLogout = async () => {
     logout();
   };
@@ -13,11 +13,16 @@ const Navbar = () => {
           Mark It
         </a>
       </div>
-      <div className="flex-none">
-        <button className="btn btn-dash w-max btn-error" onClick={handleLogout}>
-          Log out
-        </button>
-      </div>
+      {authUser && (
+        <div className="flex-none">
+          <button
+            className="btn btn-dash w-max btn-error"
+            onClick={handleLogout}
+          >
+            Log out
+          </button>
+        </div>
+      )}
     </div>
   );
 };
