@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDocumentStore } from '../stores/documentStore';
 import { LoaderCircle } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 
 const DocumentPage = () => {
   const { id } = useParams();
   const { loadDocument, currentDocument, isLoading } = useDocumentStore();
   const [error, setError] = useState(false);
+  const { authUser, isCheckingAuth } = useAuthStore();
 
   const handleSave = async (e) => {};
   const handleDelete = async (e) => {};
@@ -43,7 +45,13 @@ const DocumentPage = () => {
       </div>
     );
   }
-
+  if (isCheckingAuth && !authUser) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
+        <LoaderCircle className="size-15 animate-spin" />
+      </div>
+    );
+  }
   if (!currentDocument) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
@@ -56,14 +64,35 @@ const DocumentPage = () => {
     <div className="flex flex-col bg-base-300 items-center w-full max-w-full p-5 pt-5 min-h-[calc(100vh-64px)]">
       {/* Settings Navbar Buttons */}
       <div className="flex justify-between w-full px-4 md:px-10 mb-4">
-        <button className="btn btn-warning" onClick={handleTerminate}>
+        <button
+          className="btn btn-warning"
+          onClick={handleTerminate}
+          disabled={
+            !authUser ||
+            authUser._id.toString() !== currentDocument.authorId.toString()
+          }
+        >
           Terminate Session
         </button>
         <div className="flex flex-col md:flex-row gap-2 md:gap-4">
-          <button className="btn btn-success" onClick={handleSave}>
+          <button
+            className="btn btn-success"
+            disabled={
+              !authUser ||
+              authUser._id.toString() !== currentDocument.authorId.toString()
+            }
+            onClick={handleSave}
+          >
             Save
           </button>
-          <button className="btn btn-soft btn-error" onClick={handleDelete}>
+          <button
+            className="btn btn-soft btn-error"
+            disabled={
+              !authUser ||
+              authUser._id.toString() !== currentDocument.authorId.toString()
+            }
+            onClick={handleDelete}
+          >
             Delete
           </button>
         </div>
