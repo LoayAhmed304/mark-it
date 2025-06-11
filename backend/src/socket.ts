@@ -105,6 +105,11 @@ io.on('connection', (socket) => {
     const users = docUsers[docId] ? Array.from(docUsers[docId].values()) : [];
     socket.to(socket.data.docId).emit('doc-users', users);
   });
+
+  // when a session is terminated: just emit an empty event to the clients
+  socket.on('terminate-session', ({ docId }: { docId: string }) => {
+    socket.to(docId).emit('session-terminated');
+  });
 });
 
 export { app, serverHttp, io };
