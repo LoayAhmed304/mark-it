@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { EyeClosed, Eye } from 'lucide-react';
-import AnimatedLogo from '../components/AnimatedLogo';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
@@ -134,9 +133,7 @@ const SignupPage = () => {
         </div>
       </div>
       {/* Right Side */}
-      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2">
-        <AnimatedLogo />
-      </div>
+      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2"></div>
     </div>
   );
 };

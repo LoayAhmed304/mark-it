@@ -2,7 +2,6 @@ import React from 'react';
 import { EyeClosed, Eye } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { Link } from 'react-router-dom';
-import AnimatedLogo from '../components/AnimatedLogo';
 import { useNavigate } from 'react-router-dom';
 const LoginPage = () => {
   const [showPassword, setShowPassword] = React.useState(false);
@@ -87,9 +86,7 @@ const LoginPage = () => {
         </div>
       </div>
       {/* Right Side */}
-      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2">
-        <AnimatedLogo />
-      </div>
+      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2"></div>
     </div>
   );
 };

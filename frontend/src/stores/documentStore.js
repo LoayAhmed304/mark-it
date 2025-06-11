@@ -67,4 +67,64 @@ export const useDocumentStore = create((set, get) => ({
       set({ isCreatingDocument: false });
     }
   },
+
+  updateCollaboration: async (id) => {
+    try {
+      const response = await axiosInstance.patch(`/documents/${id}`, {
+        collaborative: !get().currentDocument.collaborative,
+      });
+      console.log('Collaboration updated:', response.data);
+      toast.success(
+        `Document collaboration ${
+          response.data.data.updatedDocument.collaborative
+            ? 'enabled'
+            : 'disabled'
+        }!`,
+      );
+      set({
+        currentDocument: {
+          ...get().currentDocument,
+          collaborative: response.data.data.updatedDocument.collaborative,
+        },
+      });
+    } catch (err) {
+      console.error('Error updating collaboration:', err);
+      toast.error(
+        err.response?.data?.message || 'Failed to update collaboration.',
+      );
+    }
+  },
+
+  saveDocument: async (id, content) => {
+    try {
+      const response = await axiosInstance.post(`/documents/save/${id}`, {
+        content,
+      });
+      console.log('Document saved:', response.data);
+      set({
+        currentDocument: {
+          ...get().currentDocument,
+          content: response.data.data.document.content,
+        },
+      });
+      toast.success('Document saved successfully!');
+    } catch (err) {
+      console.error('Error saving document:', err);
+      toast.error(err.response?.data?.message || 'Failed to save document.');
+    }
+  },
+
+  deleteDocument: async (id) => {
+    try {
+      const response = await axiosInstance.delete(`/documents/${id}`);
+      set({
+        documents: get().documents.filter((doc) => doc._id !== id),
+        currentDocument: null,
+      });
+      toast.success('Document deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting document:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete document.');
+    }
+  },
 }));
