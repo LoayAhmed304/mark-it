@@ -39,7 +39,8 @@ io.on('connection', (socket) => {
         user,
         docId,
       });
-      io.to(docId).emit('doc-users', Array.from(docUsers[docId]) || []);
+      const users = docUsers[docId] ? Array.from(docUsers[docId].values()) : [];
+      io.to(docId).emit('doc-users', users);
     },
   );
 
@@ -76,9 +77,8 @@ io.on('connection', (socket) => {
         user,
         docId,
       });
-      socket
-        .to(docId)
-        .emit('doc-users', Array.from(docUsers[docId].values()) || []);
+      const users = docUsers[docId] ? Array.from(docUsers[docId].values()) : [];
+      socket.to(docId).emit('doc-users', users);
     },
   );
 
@@ -102,12 +102,8 @@ io.on('connection', (socket) => {
       }
     }
 
-    socket
-      .to(socket.data.docId)
-      .emit(
-        'doc-users',
-        Array.from(docUsers[socket.data.docId].values()) || [],
-      );
+    const users = docUsers[docId] ? Array.from(docUsers[docId].values()) : [];
+    socket.to(socket.data.docId).emit('doc-users', users);
   });
 });
 
