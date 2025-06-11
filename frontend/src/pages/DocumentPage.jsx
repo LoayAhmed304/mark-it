@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDocumentStore } from '../stores/documentStore';
 import { LoaderCircle } from 'lucide-react';
@@ -23,7 +23,7 @@ const DocumentPage = () => {
   } = useDocumentStore();
   const [error, setError] = useState(false);
   const { authUser, isCheckingAuth } = useAuthStore();
-
+  const [localUpdate, setLocalUpdate] = useState(false);
   const [markdown, setMarkdown] = useState('');
 
   const navigate = useNavigate();
@@ -65,6 +65,7 @@ const DocumentPage = () => {
       return;
     }
     try {
+      await saveDocument(currentDocument._id, markdown);
       const res = await updateCollaboration(currentDocument._id);
 
       if (!res) {
@@ -75,6 +76,40 @@ const DocumentPage = () => {
     }
   };
 
+  const handleContentChange = (e) => {
+    setMarkdown(e.target.value);
+    setLocalUpdate(true);
+  };
+
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  };
+  const sendContentUpdate = useCallback(
+    debounce((content) => {
+      if (socket.connected && currentDocument?.collaborative) {
+        socket.emit('update-doc', {
+          docId: currentDocument._id,
+          content,
+        });
+      }
+    }, 200),
+    [currentDocument],
+  );
+  useEffect(() => {
+    if (localUpdate && currentDocument?.collaborative) {
+      sendContentUpdate(markdown);
+      setLocalUpdate(false);
+    }
+  }, [
+    markdown,
+    localUpdate,
+    sendContentUpdate,
+    currentDocument?.collaborative,
+  ]);
   useEffect(() => {
     marked.setOptions({ breaks: true, gfm: true });
 
@@ -160,6 +195,12 @@ const DocumentPage = () => {
           'This collaborative session has been terminated by the owner.',
         );
         navigate('/');
+      });
+
+      socket.on('doc-updated', (data) => {
+        if (data.docId === currentDocument._id && !localUpdate) {
+          setMarkdown(data.content);
+        }
       });
     };
 
@@ -295,8 +336,8 @@ const DocumentPage = () => {
               <textarea
                 className="textarea textarea-bordered w-full h-[100vh]"
                 placeholder="Type your document content here..."
-                defaultValue={markdown}
-                onChange={(e) => setMarkdown(e.target.value)}
+                value={markdown}
+                onChange={handleContentChange}
               />
             </div>
           </div>
