@@ -7,6 +7,7 @@ export const useDocumentStore = create((set, get) => ({
   currentDocument: null,
   documents: [],
   isCreatingDocument: false,
+  currentCollabs: [],
 
   setDocuments: (documents) => set({ documents }),
 
@@ -87,6 +88,7 @@ export const useDocumentStore = create((set, get) => ({
           collaborative: response.data.data.updatedDocument.collaborative,
         },
       });
+      return get().currentDocument.collaborative;
     } catch (err) {
       console.error('Error updating collaboration:', err);
       toast.error(
@@ -130,10 +132,7 @@ export const useDocumentStore = create((set, get) => ({
 
   updateCollabs: async (users) => {
     set({
-      currentDocument: {
-        ...get().currentDocument,
-        collaborators: users,
-      },
+      currentCollabs: users,
     });
   },
 }));

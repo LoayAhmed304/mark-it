@@ -6,9 +6,11 @@ import { useAuthStore } from '../stores/authStore';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify'; // to snaitize the output
 import { socket } from '../sockets/socket';
+import { toast } from 'react-hot-toast';
 
 const DocumentPage = () => {
   const { id } = useParams();
+
   const {
     loadDocument,
     currentDocument,
@@ -17,6 +19,7 @@ const DocumentPage = () => {
     saveDocument,
     deleteDocument,
     updateCollabs,
+    currentCollabs,
   } = useDocumentStore();
   const [error, setError] = useState(false);
   const { authUser, isCheckingAuth } = useAuthStore();
@@ -62,7 +65,11 @@ const DocumentPage = () => {
       return;
     }
     try {
-      await updateCollaboration(currentDocument._id);
+      const res = await updateCollaboration(currentDocument._id);
+
+      if (!res) {
+        socket.emit('terminate-session', { docId: currentDocument._id });
+      }
     } catch (err) {
       console.error('Error terminating session:', err);
     }
@@ -72,11 +79,16 @@ const DocumentPage = () => {
     marked.setOptions({ breaks: true, gfm: true });
 
     return () => {
-      socket.emit('leave-doc', {
-        docId: currentDocument?._id || id,
-        user: authUser,
-      });
-      socket.disconnect();
+      if (socket.connected) {
+        socket.emit('leave-doc', {
+          docId: currentDocument?._id || id,
+          user: authUser,
+        });
+        socket.off('doc-users');
+        socket.off('session-terminated');
+        socket.off('joined-doc');
+        socket.off('left-doc');
+      }
     };
   }, []);
 
@@ -85,22 +97,11 @@ const DocumentPage = () => {
       setMarkdown(currentDocument.content);
     }
   }, [currentDocument]);
+
   useEffect(() => {
     const fetchDocument = async () => {
       try {
         await loadDocument(id);
-        socket.connect();
-        socket.emit('join-doc', {
-          docId: currentDocument?._id || id,
-          user: authUser,
-        });
-        socket.on('doc-users', (data) => {
-          updateCollabs(data);
-          console.log(
-            'Current users in document:',
-            currentDocument?.collaborators,
-          );
-        });
       } catch (err) {
         setError(true);
         console.error('Error loading document:', err);
@@ -109,6 +110,71 @@ const DocumentPage = () => {
 
     fetchDocument();
   }, [id, loadDocument]);
+
+  // Document is loaded for the first time and its authenticated user
+  useEffect(() => {
+    if (!currentDocument || !authUser) return;
+
+    // Only setup socket connection if document is collaborative
+    if (!currentDocument.collaborative) {
+      return;
+    }
+
+    // Setup socket connection and listeners
+    const setupSocketConnection = () => {
+      // Remove any existing listeners to prevent duplicates
+      socket.off('doc-users');
+      socket.off('session-terminated');
+      socket.off('joined-doc');
+      socket.off('left-doc');
+
+      // Connect if not already connected
+      if (!socket.connected) {
+        socket.connect();
+      }
+
+      // Join document room
+      socket.emit('join-doc', {
+        docId: currentDocument._id,
+        user: authUser,
+      });
+
+      // Setup event listeners
+      socket.on('joined-doc', (data) => {
+        // Don't show toast for the current user
+        if (data.user._id !== authUser._id) {
+          toast.success(`${data.user.username} joined the document!`);
+        }
+      });
+
+      socket.on('left-doc', (data) => {
+        toast.success(`${data.user.username} left the document.`);
+      });
+
+      socket.on('doc-users', (data) => {
+        updateCollabs(data);
+      });
+
+      socket.on('session-terminated', () => {
+        toast.error(
+          'This collaborative session has been terminated by the owner.',
+        );
+        navigate('/');
+      });
+    };
+
+    setupSocketConnection();
+
+    // Cleanup function
+    return () => {
+      if (socket.connected) {
+        socket.emit('leave-doc', {
+          docId: currentDocument._id,
+          user: authUser,
+        });
+      }
+    };
+  }, [currentDocument?._id, currentDocument?.collaborative, authUser]);
 
   if (error) {
     console.error('Error loading document IN DOC PAGE:', error);
@@ -146,22 +212,55 @@ const DocumentPage = () => {
     <div className="flex flex-col bg-base-300 items-center w-full max-w-full p-5 pt-5 min-h-[calc(100vh-64px)]">
       {/* Settings Navbar Buttons */}
       <div className="flex justify-between w-full px-4 md:px-10 mb-4">
-        <button
-          className={`btn btn-${
-            currentDocument.collaborative
-              ? 'warning btn-soft'
-              : 'primary btn-outline'
-          }`}
-          onClick={handleTerminate}
-          disabled={
-            !authUser ||
-            authUser._id.toString() !== currentDocument.authorId.toString()
-          }
-        >
-          {currentDocument.collaborative
-            ? 'Terminate Session'
-            : 'Start Session'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className={`btn btn-${
+              currentDocument.collaborative
+                ? 'error btn-soft'
+                : 'primary btn-outline'
+            }`}
+            onClick={handleTerminate}
+            disabled={
+              !authUser ||
+              authUser._id.toString() !== currentDocument.authorId.toString()
+            }
+          >
+            {currentDocument.collaborative
+              ? 'Terminate Session'
+              : 'Start Session'}
+          </button>
+
+          {/* Collaborator Avatars */}
+          {currentDocument.collaborative && (
+            <div className="flex -space-x-2 ml-2">
+              {currentCollabs &&
+                currentCollabs.map((collab, index) => (
+                  <div
+                    key={index}
+                    className="tooltip"
+                    data-tip={collab.username}
+                  >
+                    <div className="avatar placeholder">
+                      <div
+                        className={`flex justify-center items-center rounded-full w-8 h-8 ring ${
+                          authUser && collab._id === authUser._id
+                            ? 'bg-primary text-primary-content ring-primary ring-offset-2'
+                            : 'bg-neutral text-neutral-content'
+                        }`}
+                      >
+                        <span className="text-xs font-bold flex items-center justify-center h-full">
+                          {authUser && collab._id === authUser._id
+                            ? 'You'
+                            : collab.username.slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col md:flex-row gap-2 md:gap-4">
           <button
             className="btn btn-success"
