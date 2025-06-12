@@ -27,6 +27,7 @@ const DocumentPage = () => {
   const [markdown, setMarkdown] = useState('');
   const [autoSaveInterval, setAutoSaveInterval] = useState(0); // 0 means disabled
   const [autoSaveTimer, setAutoSaveTimer] = useState(null);
+  const [prevContent, setPrevContent] = useState(currentDocument?.content); // To track previous content for auto-save
 
   const navigate = useNavigate();
 
@@ -132,6 +133,7 @@ const DocumentPage = () => {
   useEffect(() => {
     if (currentDocument?.content) {
       setMarkdown(currentDocument.content);
+      setPrevContent(currentDocument.content);
     }
   }, [currentDocument]);
 
@@ -219,45 +221,6 @@ const DocumentPage = () => {
     };
   }, [currentDocument?._id, currentDocument?.collaborative, authUser]);
 
-  // Handle auto-save interval change
-  const handleAutoSaveChange = (e) => {
-    const value = parseInt(e.target.value);
-    setAutoSaveInterval(value);
-
-    // Clear existing timer if any
-    if (autoSaveTimer) {
-      clearInterval(autoSaveTimer);
-      setAutoSaveTimer(null);
-    }
-
-    // If value is not 0 (disabled), set up a new timer
-    if (value > 0) {
-      const seconds =
-        value === 25 ? 5 : value === 50 ? 10 : value === 75 ? 15 : 20;
-      const timer = setInterval(() => {
-        if (
-          authUser &&
-          currentDocument &&
-          authUser._id.toString() === currentDocument.authorId.toString()
-        ) {
-          saveDocument(currentDocument._id, markdown);
-          toast.success(`Document auto-saved (every ${seconds} seconds)`);
-        }
-      }, seconds * 1000);
-
-      setAutoSaveTimer(timer);
-    }
-  };
-
-  // Clean up auto-save timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimer) {
-        clearInterval(autoSaveTimer);
-      }
-    };
-  }, [autoSaveTimer]);
-
   if (error) {
     console.error('Error loading document IN DOC PAGE:', error);
     return (
@@ -344,37 +307,6 @@ const DocumentPage = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-2 md:gap-4">
-          {authUser &&
-            authUser._id.toString() === currentDocument.authorId.toString() && (
-              <div className="w-max max-w-s">
-                <label className="block text-sm font-medium mb-1">
-                  Auto-Save Interval (seconds)
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max="100"
-                  value={autoSaveInterval}
-                  onChange={handleAutoSaveChange}
-                  className="range"
-                  step="25"
-                />
-                <div className="flex justify-between px-2.5 mt-2 text-xs">
-                  <span>|</span>
-                  <span>|</span>
-                  <span>|</span>
-                  <span>|</span>
-                  <span>|</span>
-                </div>
-                <div className="flex justify-between px-2.5 mt-2 text-xs">
-                  <span>Off</span>
-                  <span>5s</span>
-                  <span>10s</span>
-                  <span>15s</span>
-                  <span>20s</span>
-                </div>
-              </div>
-            )}
           <button
             className="btn btn-success"
             disabled={
