@@ -9,8 +9,6 @@ import {
   initDocument,
 } from './lib/docCache.js';
 import { get } from 'mongoose';
-import dontenv from 'dotenv';
-dontenv.config();
 
 const app = express();
 // create one HTTP server for the express app and the socket.io server
