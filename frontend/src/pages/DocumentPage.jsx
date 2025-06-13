@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDocumentStore } from '../stores/documentStore';
 import { LoaderCircle } from 'lucide-react';
@@ -9,6 +9,8 @@ import { socket } from '../sockets/socket';
 import { toast } from 'react-hot-toast';
 
 const DocumentPage = () => {
+  const textAreaRef = useRef(null); // Fixed: Removed TypeScript syntax
+
   const { id } = useParams();
 
   const {
@@ -26,6 +28,7 @@ const DocumentPage = () => {
   const { authUser, isCheckingAuth } = useAuthStore();
   const [localUpdate, setLocalUpdate] = useState(false);
   const [markdown, setMarkdown] = useState('');
+  const [parsedMarkdown, setParsedMarkdown] = useState('');
 
   const navigate = useNavigate();
 
@@ -35,7 +38,10 @@ const DocumentPage = () => {
       return;
     }
     try {
-      await saveDocument(currentDocument._id, markdown);
+      await saveDocument(
+        currentDocument._id,
+        textAreaRef.current?.value || markdown,
+      );
     } catch (err) {
       console.error('Error saving document:', err);
     }
@@ -66,7 +72,10 @@ const DocumentPage = () => {
       return;
     }
     try {
-      await saveDocument(currentDocument._id, markdown);
+      await saveDocument(
+        currentDocument._id,
+        textAreaRef.current?.value || markdown,
+      );
       const res = await updateCollaboration(currentDocument._id);
 
       if (!res) {
@@ -78,6 +87,7 @@ const DocumentPage = () => {
   };
 
   const handleContentChange = (e) => {
+    if (textAreaRef.current) textAreaRef.current.value = e.target.value;
     setMarkdown(e.target.value);
     setLocalUpdate(true);
   };
@@ -102,19 +112,22 @@ const DocumentPage = () => {
   );
   useEffect(() => {
     if (localUpdate && currentDocument?.collaborative) {
-      sendContentUpdate(markdown);
+      sendContentUpdate(textAreaRef.current?.value || markdown);
       setLocalUpdate(false);
     }
   }, [
     markdown,
+    textAreaRef,
     localUpdate,
     sendContentUpdate,
     currentDocument?.collaborative,
   ]);
   useEffect(() => {
     marked.setOptions({ breaks: true, gfm: true });
+    if (textAreaRef.current) textAreaRef.current.focus();
 
     return () => {
+      textAreaRef.current = null;
       setMarkdown('');
       resetDocument();
       if (socket.connected) {
@@ -132,6 +145,8 @@ const DocumentPage = () => {
 
   useEffect(() => {
     if (currentDocument?.content) {
+      if (textAreaRef.current)
+        textAreaRef.current.value = currentDocument.content;
       setMarkdown(currentDocument.content);
     }
   }, [currentDocument]);
@@ -139,6 +154,8 @@ const DocumentPage = () => {
   useEffect(() => {
     const fetchDocument = async () => {
       try {
+        if (textAreaRef.current)
+          textAreaRef.current.value = currentDocument?.content || '';
         setMarkdown(currentDocument?.content || '');
         await loadDocument(id);
       } catch (err) {
@@ -150,6 +167,8 @@ const DocumentPage = () => {
     fetchDocument();
     return () => {
       setError(false);
+      if (textAreaRef.current) textAreaRef.current.value = '';
+      textAreaRef.current = null;
       setMarkdown('');
       setLocalUpdate(false);
       resetDocument();
@@ -164,29 +183,25 @@ const DocumentPage = () => {
     if (!currentDocument.collaborative) {
       return;
     }
+    if (textAreaRef.current)
+      textAreaRef.current.value = currentDocument.content || '';
     setMarkdown(currentDocument.content || '');
-    // Setup socket connection and listeners
     const setupSocketConnection = () => {
-      // Remove any existing listeners to prevent duplicates
       socket.off('doc-users');
       socket.off('session-terminated');
       socket.off('joined-doc');
       socket.off('left-doc');
 
-      // Connect if not already connected
       if (!socket.connected) {
         socket.connect();
       }
 
-      // Join document room
       socket.emit('join-doc', {
         docId: currentDocument._id,
         user: authUser,
       });
 
-      // Setup event listeners
       socket.on('joined-doc', (data) => {
-        // Don't show toast for the current user
         if (data.user._id !== authUser._id) {
           toast.success(`${data.user.username} joined the document!`);
         }
@@ -205,20 +220,45 @@ const DocumentPage = () => {
           'This collaborative session has been terminated by the owner.',
         );
         navigate('/');
-        setMarkdown('');
         resetDocument();
       });
 
       socket.on('doc-updated', (data) => {
         if (data.docId === currentDocument._id && !localUpdate) {
-          setMarkdown(data.content);
+          if (textAreaRef.current) {
+            const textarea = textAreaRef.current;
+            if (!textarea) return;
+
+            // Save cursor position and scroll position
+            const prevStart = textarea.selectionStart;
+            const prevEnd = textarea.selectionEnd;
+            const prevScrollTop = textarea.scrollTop;
+
+            if (textAreaRef.current.value !== data.content) {
+              textAreaRef.current.value = data.content;
+
+              // Set markdown with setTimeout to ensure it happens in the next event cycle
+              setTimeout(() => {
+                setMarkdown(data.content);
+              }, 0);
+
+              // Use requestAnimationFrame to ensure the DOM has been updated
+              requestAnimationFrame(() => {
+                if (textAreaRef.current) {
+                  textAreaRef.current.selectionStart = prevStart;
+                  textAreaRef.current.selectionEnd = prevEnd;
+                  textAreaRef.current.scrollTop = prevScrollTop;
+                  textAreaRef.current.focus();
+                }
+              });
+            }
+          }
         }
       });
     };
 
     setupSocketConnection();
 
-    // Cleanup function
     return () => {
       if (socket.connected) {
         socket.emit('leave-doc', {
@@ -228,6 +268,13 @@ const DocumentPage = () => {
       }
     };
   }, [currentDocument?._id, currentDocument?.collaborative, authUser]);
+
+  useEffect(() => {
+    if (markdown !== undefined) {
+      const html = DOMPurify.sanitize(marked(markdown || ''));
+      setParsedMarkdown(html);
+    }
+  }, [markdown]);
 
   if (error) {
     console.error('Error loading document IN DOC PAGE:', error);
@@ -348,7 +395,8 @@ const DocumentPage = () => {
               <textarea
                 className="textarea textarea-bordered w-full h-[100vh]"
                 placeholder="Type your document content here..."
-                value={markdown}
+                ref={textAreaRef}
+                defaultValue={markdown}
                 onChange={handleContentChange}
               />
             </div>
@@ -362,9 +410,7 @@ const DocumentPage = () => {
               <div className="bg-base-200 rounded-box h-[100vh] overflow-auto p-4">
                 <div
                   className="prose prose-sm max-w-none min-h-[calc(100vh-4rem)] pb-[50vh]"
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(marked(markdown)),
-                  }}
+                  dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
                 />
               </div>
             </div>
