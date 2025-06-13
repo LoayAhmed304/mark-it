@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.8",
     "axios": "^1.9.0",
+    "diff-match-patch": "^1.0.5",
     "dompurify": "^3.2.6",
     "lucide-react": "^0.513.0",
     "marked": "^15.0.12",

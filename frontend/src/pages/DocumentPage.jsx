@@ -20,14 +20,12 @@ const DocumentPage = () => {
     deleteDocument,
     updateCollabs,
     currentCollabs,
+    resetDocument,
   } = useDocumentStore();
   const [error, setError] = useState(false);
   const { authUser, isCheckingAuth } = useAuthStore();
   const [localUpdate, setLocalUpdate] = useState(false);
   const [markdown, setMarkdown] = useState('');
-  const [autoSaveInterval, setAutoSaveInterval] = useState(0); // 0 means disabled
-  const [autoSaveTimer, setAutoSaveTimer] = useState(null);
-  const [prevContent, setPrevContent] = useState(currentDocument?.content); // To track previous content for auto-save
 
   const navigate = useNavigate();
 
@@ -117,6 +115,8 @@ const DocumentPage = () => {
     marked.setOptions({ breaks: true, gfm: true });
 
     return () => {
+      setMarkdown('');
+      resetDocument();
       if (socket.connected) {
         socket.emit('leave-doc', {
           docId: currentDocument?._id || id,
@@ -133,13 +133,13 @@ const DocumentPage = () => {
   useEffect(() => {
     if (currentDocument?.content) {
       setMarkdown(currentDocument.content);
-      setPrevContent(currentDocument.content);
     }
   }, [currentDocument]);
 
   useEffect(() => {
     const fetchDocument = async () => {
       try {
+        setMarkdown(currentDocument?.content || '');
         await loadDocument(id);
       } catch (err) {
         setError(true);
@@ -148,6 +148,12 @@ const DocumentPage = () => {
     };
 
     fetchDocument();
+    return () => {
+      setError(false);
+      setMarkdown('');
+      setLocalUpdate(false);
+      resetDocument();
+    };
   }, [id, loadDocument]);
 
   // Document is loaded for the first time and its authenticated user
@@ -158,7 +164,7 @@ const DocumentPage = () => {
     if (!currentDocument.collaborative) {
       return;
     }
-
+    setMarkdown(currentDocument.content || '');
     // Setup socket connection and listeners
     const setupSocketConnection = () => {
       // Remove any existing listeners to prevent duplicates
@@ -199,6 +205,8 @@ const DocumentPage = () => {
           'This collaborative session has been terminated by the owner.',
         );
         navigate('/');
+        setMarkdown('');
+        resetDocument();
       });
 
       socket.on('doc-updated', (data) => {

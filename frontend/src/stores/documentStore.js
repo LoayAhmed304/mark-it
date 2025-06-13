@@ -135,4 +135,11 @@ export const useDocumentStore = create((set, get) => ({
       currentCollabs: users,
     });
   },
+
+  resetDocument: () => {
+    set({
+      currentDocument: null,
+      currentCollabs: [],
+    });
+  },
 }));
