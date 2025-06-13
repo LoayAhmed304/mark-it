@@ -409,7 +409,7 @@ const DocumentPage = () => {
               <h3 className="card-title">Preview</h3>
               <div className="bg-base-200 rounded-box h-[100vh] overflow-auto p-4">
                 <div
-                  className="prose prose-sm max-w-none min-h-[calc(100vh-4rem)] pb-[50vh]"
+                  className="prose prose-sm w-full min-h-[calc(100vh-4rem)] pb-[50vh]"
                   dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
                 />
               </div>
