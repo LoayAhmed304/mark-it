@@ -7,9 +7,13 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify'; // to snaitize the output
 import { socket } from '../sockets/socket';
 import { toast } from 'react-hot-toast';
+import { createPatch, applyPatch } from '../lib/diffUtils'; // Importing the diff utility functions
+
+let lastSentContent = '';
 
 const DocumentPage = () => {
-  const textAreaRef = useRef(null); // Fixed: Removed TypeScript syntax
+  const textAreaRef = useRef(null);
+  const fromRemoteRef = useRef(false);
 
   const { id } = useParams();
 
@@ -102,15 +106,22 @@ const DocumentPage = () => {
   const sendContentUpdate = useCallback(
     debounce((content) => {
       if (socket.connected && currentDocument?.collaborative) {
+        const patchText = createPatch(lastSentContent, content);
+        if (!patchText) return;
         socket.emit('update-doc', {
           docId: currentDocument._id,
-          content,
+          patch: patchText,
         });
+        lastSentContent = content; // Update the last sent content
       }
     }, 200),
     [currentDocument],
   );
   useEffect(() => {
+    if (fromRemoteRef.current) {
+      fromRemoteRef.current = false;
+      return;
+    }
     if (localUpdate && currentDocument?.collaborative) {
       sendContentUpdate(textAreaRef.current?.value || markdown);
       setLocalUpdate(false);
@@ -186,6 +197,7 @@ const DocumentPage = () => {
     if (textAreaRef.current)
       textAreaRef.current.value = currentDocument.content || '';
     setMarkdown(currentDocument.content || '');
+    lastSentContent = currentDocument.content || '';
     const setupSocketConnection = () => {
       socket.off('doc-users');
       socket.off('session-terminated');
@@ -223,35 +235,39 @@ const DocumentPage = () => {
         resetDocument();
       });
 
-      socket.on('doc-updated', (data) => {
-        if (data.docId === currentDocument._id && !localUpdate) {
+      socket.on('doc-updated', ({ docId, patch }) => {
+        if (docId === currentDocument._id && !localUpdate) {
           if (textAreaRef.current) {
             const textarea = textAreaRef.current;
             if (!textarea) return;
+            const currentText = textarea.value;
+            const { newText, success } = applyPatch(currentText, patch);
+
+            if (!success) return;
 
             // Save cursor position and scroll position
             const prevStart = textarea.selectionStart;
             const prevEnd = textarea.selectionEnd;
             const prevScrollTop = textarea.scrollTop;
 
-            if (textAreaRef.current.value !== data.content) {
-              textAreaRef.current.value = data.content;
+            fromRemoteRef.current = true;
+            lastSentContent = newText;
+            textAreaRef.current.value = newText;
 
-              // Set markdown with setTimeout to ensure it happens in the next event cycle
-              setTimeout(() => {
-                setMarkdown(data.content);
-              }, 0);
+            // Set markdown with setTimeout to ensure it happens in the next event cycle
+            setTimeout(() => {
+              setMarkdown(newText);
+            }, 0);
 
-              // Use requestAnimationFrame to ensure the DOM has been updated
-              requestAnimationFrame(() => {
-                if (textAreaRef.current) {
-                  textAreaRef.current.selectionStart = prevStart;
-                  textAreaRef.current.selectionEnd = prevEnd;
-                  textAreaRef.current.scrollTop = prevScrollTop;
-                  textAreaRef.current.focus();
-                }
-              });
-            }
+            // Use requestAnimationFrame to ensure the DOM has been updated
+            requestAnimationFrame(() => {
+              if (textAreaRef.current) {
+                textAreaRef.current.selectionStart = prevStart;
+                textAreaRef.current.selectionEnd = prevEnd;
+                textAreaRef.current.scrollTop = prevScrollTop;
+                textAreaRef.current.focus();
+              }
+            });
           }
         }
       });
