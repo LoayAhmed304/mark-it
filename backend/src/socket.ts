@@ -2,6 +2,13 @@ import { Server as SocketIOServer } from 'socket.io';
 import { UserDocument } from './models/user.model.js';
 import http from 'http';
 import express from 'express';
+import { applyPatchServer } from './lib/utils.js'; // Assuming this is the correct path to your utility function
+import {
+  getDocumentContent,
+  setDocumentContent,
+  initDocument,
+} from './lib/docCache.js';
+import { get } from 'mongoose';
 
 const app = express();
 // create one HTTP server for the express app and the socket.io server
@@ -9,7 +16,7 @@ const serverHttp = http.createServer(app);
 
 const io = new SocketIOServer(serverHttp, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true,
   },
 });
@@ -23,10 +30,10 @@ io.on('connection', (socket) => {
   socket.on(
     'join-doc',
     ({ docId, user }: { docId: string; user: UserDocument }) => {
+      initDocument(docId);
       socket.join(docId);
       socket.data.user = user;
       socket.data.docId = docId;
-
       console.log(
         `Client ${socket.id}, with username ${user.username} joined document: ${docId}`,
       );
@@ -47,12 +54,19 @@ io.on('connection', (socket) => {
   // when a user sends an update to a document: send the doc id & the document content to all users in that document
   socket.on(
     'update-doc',
-    ({ docId, content }: { docId: string; content: string }) => {
-      console.log(`Document ${docId} updated with content: ${content}`);
+    ({ docId, patch }: { docId: string; patch: string }) => {
+      const current = getDocumentContent(docId);
+      const { newText, success } = applyPatchServer(current, patch);
+      if (!success) {
+        console.error('Patch application failed');
+        return;
+      }
+      // update the current
+      setDocumentContent(docId, newText);
 
-      io.to(docId).emit('doc-updated', {
+      socket.to(docId).emit('doc-updated', {
         docId,
-        content,
+        patch,
       });
     },
   );

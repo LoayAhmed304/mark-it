@@ -18,16 +18,13 @@ const HomePage = () => {
   }, []);
 
   const handleLoad = (id) => {
-    console.log('Loading document');
     navigate(`/document/${id}`);
-    // TODO: Implement the logic to load the document
   };
 
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
       const newDocId = await addUserDocument(formData);
-      console.log(':new ID:', newDocId);
       setFormData({ title: '' }); // Reset form
 
       // Navigate to the new document after creation
@@ -46,7 +43,6 @@ const HomePage = () => {
       </div>
     );
   }
-  console.log('Documents:', documents);
 
   return (
     <div className="bg-base-300 min-h-[calc(100vh-64px)] py-6">

@@ -3,6 +3,7 @@ import { EyeClosed, Eye } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import LogoAnimation from '../components/LogoAnimation';
 const LoginPage = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -86,7 +87,9 @@ const LoginPage = () => {
         </div>
       </div>
       {/* Right Side */}
-      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2"></div>
+      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2">
+        <LogoAnimation />
+      </div>
     </div>
   );
 };

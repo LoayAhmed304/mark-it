@@ -20,11 +20,6 @@ export const useDocumentStore = create((set, get) => ({
       if (foundDoc) {
         set({ currentDocument: foundDoc });
       } else {
-        // If not found locally, try to fetch from server
-        console.log(
-          `Document with ID ${id} not found in local state, trying server...`,
-        );
-        // For demo, use a sample document
         const response = await axiosInstance.get(`/documents/${id}`);
         if (response.status !== 200) {
           throw new Error('Document not found or insufficient permissions');
@@ -37,7 +32,7 @@ export const useDocumentStore = create((set, get) => ({
       console.error('Error loading document:', error);
       toast.error('Failed to load document.');
       set({ currentDocument: null });
-      throw error; // Re-throw to be caught by the component
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -51,7 +46,6 @@ export const useDocumentStore = create((set, get) => ({
 
     try {
       const response = await axiosInstance.post('/documents', formData);
-      console.log('Document created:', response.data);
       set({
         documents: [...get().documents, response.data.data.document],
       });
@@ -74,7 +68,6 @@ export const useDocumentStore = create((set, get) => ({
       const response = await axiosInstance.patch(`/documents/${id}`, {
         collaborative: !get().currentDocument.collaborative,
       });
-      console.log('Collaboration updated:', response.data);
       toast.success(
         `Document collaboration ${
           response.data.data.updatedDocument.collaborative
@@ -102,7 +95,6 @@ export const useDocumentStore = create((set, get) => ({
       const response = await axiosInstance.post(`/documents/save/${id}`, {
         content,
       });
-      console.log('Document saved:', response.data);
       set({
         currentDocument: {
           ...get().currentDocument,
@@ -133,6 +125,13 @@ export const useDocumentStore = create((set, get) => ({
   updateCollabs: async (users) => {
     set({
       currentCollabs: users,
+    });
+  },
+
+  resetDocument: () => {
+    set({
+      currentDocument: null,
+      currentCollabs: [],
     });
   },
 }));
