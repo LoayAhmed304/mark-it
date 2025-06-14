@@ -1,0 +1,345 @@
+/* Container for the entire logo animation */
+.logo-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 2rem;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+.logo-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Markdown editor layout */
+.markdown-editor {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
+  width: 100%;
+}
+
+/* Editor and preview window styling */
+.editor-window,
+.preview-window {
+  background: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  overflow: hidden;
+  height: 200px;
+  transition: all 0.5s ease;
+}
+
+.preview-window {
+  animation: slideIn 0.6s ease-out;
+}
+
+/* Window header styling */
+.window-header {
+  background: #333;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.control {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.close {
+  background: #ff5f56;
+}
+
+.minimize {
+  background: #ffbd2e;
+}
+
+.maximize {
+  background: #27c93f;
+}
+
+.window-title {
+  color: #ddd;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+/* Content area styling */
+.editor-content,
+.preview-content {
+  padding: 15px;
+  color: #f8f8f8;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  height: calc(100% - 30px);
+  overflow: auto;
+}
+
+.editor-text {
+  white-space: pre-wrap;
+  margin: 0;
+  color: #e5c07b;
+}
+
+/* Markdown code styling */
+.markdown-code {
+  white-space: nowrap;
+  overflow: hidden;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.syntax {
+  color: #61afef;
+}
+
+.content {
+  color: #e5c07b;
+}
+
+/* Collaborator effect styling */
+.collaborator {
+  display: flex;
+  align-items: center;
+  margin-top: 15px;
+  position: relative;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.collab-cursor {
+  width: 2px;
+  height: 16px;
+  background: #ff5f56;
+  margin-right: 2px;
+  animation: blink 1s infinite;
+}
+
+.collab-typing {
+  display: flex;
+}
+
+.collab-text {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  animation: typing 2s steps(25, end) forwards;
+  animation-delay: 0.5s;
+}
+
+/* Preview styling */
+.preview-html {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.preview-html h1 {
+  color: white;
+  font-size: 20px;
+  margin: 0 0 10px 0;
+}
+
+.preview-html h2 {
+  color: #e5c07b;
+  font-size: 18px;
+  margin: 0 0 10px 0;
+}
+
+.preview-html ul {
+  margin: 0 0 0 20px;
+  padding: 0;
+}
+
+.preview-html li {
+  margin-bottom: 5px;
+}
+
+.preview-content h1 {
+  color: white;
+  font-size: 20px;
+  margin-bottom: 10px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.preview-content h2 {
+  color: #e5c07b;
+  font-size: 18px;
+  margin-bottom: 10px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.rendered-list {
+  list-style-type: disc;
+  margin-left: 20px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.rendered-item {
+  margin-bottom: 5px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.collab-rendered {
+  color: #ff5f56;
+  animation: fadeInUp 0.5s ease-out, pulse 2s infinite;
+}
+
+/* Logo title styles */
+.logo-title {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: -1px;
+  margin-top: 0.5rem;
+}
+
+.mark {
+  color: #61afef;
+}
+
+.it {
+  color: #e5c07b;
+  margin-left: 5px;
+  position: relative;
+}
+
+.it::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: #ff5f56;
+  animation: underline 1s ease-in-out infinite;
+}
+
+.tagline {
+  font-size: 1rem;
+  color: #ddd;
+  margin-top: 0.25rem;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  animation: fadeIn 1s ease-out forwards;
+  animation-delay: 4s;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    color: #ff5f56;
+  }
+  50% {
+    color: #e5c07b;
+  }
+  100% {
+    color: #ff5f56;
+  }
+}
+
+@keyframes underline {
+  0% {
+    width: 0;
+    left: 0;
+    right: auto;
+  }
+  50% {
+    width: 100%;
+    left: 0;
+    right: auto;
+  }
+  51% {
+    width: 100%;
+    left: auto;
+    right: 0;
+  }
+  100% {
+    width: 0;
+    left: auto;
+    right: 0;
+  }
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+  .markdown-editor {
+    flex-direction: column;
+  }
+
+  .editor-window,
+  .preview-window {
+    height: 150px;
+  }
+
+  .logo-title {
+    font-size: 2rem;
+  }
+
+  .tagline {
+    font-size: 0.9rem;
+  }
+}
