@@ -41,10 +41,8 @@ export const useAuthStore = create(
       set({ isCheckingAuth: true });
       try {
         const response = await axiosInstance.get('/auth/check');
-        console.log('Auth check response:', response.data);
         if (response.data) {
           set({ authUser: response.data.data });
-          console.log('Auth user set:', get().authUser);
         }
       } catch (err) {
         console.error('Error checking auth:', err);
@@ -91,12 +89,10 @@ export const useAuthStore = create(
 
       try {
         const user = await axiosInstance.post('/auth/signup', formData);
-        console.log('response user: ', user.data.data);
         if (user.data) {
           set({ authUser: user.data.data });
         }
 
-        console.log('Auth user: ', get().authUser);
         toast.success('Account created successfully!');
 
         return true;
@@ -130,7 +126,6 @@ export const useAuthStore = create(
         // Implement logic to fetch user documents from the server
         const { setDocuments } = useDocumentStore.getState();
         const response = await axiosInstance.get('/documents');
-        console.log('Fetched documents:', response.data.data.documents);
         setDocuments(response.data.data.documents || []);
       } catch (err) {
         console.error('Error fetching documents:', err);

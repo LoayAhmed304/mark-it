@@ -171,7 +171,6 @@ const DocumentPage = () => {
         await loadDocument(id);
       } catch (err) {
         setError(true);
-        console.error('Error loading document:', err);
       }
     };
 
@@ -293,7 +292,6 @@ const DocumentPage = () => {
   }, [markdown]);
 
   if (error) {
-    console.error('Error loading document IN DOC PAGE:', error);
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <p className="text-error-500">
@@ -303,7 +301,6 @@ const DocumentPage = () => {
     );
   }
   if (isLoading && !currentDocument) {
-    console.log('Loading document...');
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <LoaderCircle className="size-15 animate-spin" />
