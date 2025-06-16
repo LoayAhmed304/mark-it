@@ -2,6 +2,8 @@ import { Server as SocketIOServer } from 'socket.io';
 import { UserDocument } from './models/user.model.js';
 import http from 'http';
 import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 // create one HTTP server for the express app and the socket.io server
@@ -9,7 +11,7 @@ const serverHttp = http.createServer(app);
 
 const io = new SocketIOServer(serverHttp, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true,
   },
 });

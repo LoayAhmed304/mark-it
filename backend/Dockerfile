@@ -1,6 +1,5 @@
 FROM node:22.11.0
 
-ENV NODE_ENV=production
 
 RUN mkdir -p /home/app
 WORKDIR /home/app
@@ -11,4 +10,7 @@ RUN npm install
 COPY . .
 
 RUN npm run build
+
+ENV NODE_ENV=production
+
 CMD ["npm", "start"]
