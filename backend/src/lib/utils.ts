@@ -1,5 +1,9 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { diff_match_patch, Diff } from 'diff-match-patch';
+
+const dmp = new diff_match_patch();
+
 export const generateToken = async (
   userId: string,
   res: Response,
@@ -20,3 +24,13 @@ export const generateToken = async (
     secure: process.env.NODE_ENV !== 'development',
   });
 };
+
+export function applyPatchServer(
+  currentText: string,
+  patchText: string,
+): { newText: string; success: boolean } {
+  const patches = dmp.patch_fromText(patchText);
+  const [newText, results] = dmp.patch_apply(patches, currentText);
+  const success = results.every((result) => result);
+  return { newText, success };
+}

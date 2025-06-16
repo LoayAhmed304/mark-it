@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { EyeClosed, Eye } from 'lucide-react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import LogoAnimation from '../components/LogoAnimation';
 
 const SignupPage = () => {
   const { isSigningUp, signup } = useAuthStore();
@@ -133,7 +134,9 @@ const SignupPage = () => {
         </div>
       </div>
       {/* Right Side */}
-      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2"></div>
+      <div className="hidden md:flex justify-center items-center bg-secondary h-full w-full md:w-1/2">
+        <LogoAnimation />
+      </div>
     </div>
   );
 };

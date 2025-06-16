@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDocumentStore } from '../stores/documentStore';
 import { LoaderCircle } from 'lucide-react';
@@ -7,8 +7,14 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify'; // to snaitize the output
 import { socket } from '../sockets/socket';
 import { toast } from 'react-hot-toast';
+import { createPatch, applyPatch } from '../lib/diffUtils'; // Importing the diff utility functions
+
+let lastSentContent = '';
 
 const DocumentPage = () => {
+  const textAreaRef = useRef(null);
+  const fromRemoteRef = useRef(false);
+
   const { id } = useParams();
 
   const {
@@ -20,13 +26,13 @@ const DocumentPage = () => {
     deleteDocument,
     updateCollabs,
     currentCollabs,
+    resetDocument,
   } = useDocumentStore();
   const [error, setError] = useState(false);
   const { authUser, isCheckingAuth } = useAuthStore();
   const [localUpdate, setLocalUpdate] = useState(false);
   const [markdown, setMarkdown] = useState('');
-  const [autoSaveInterval, setAutoSaveInterval] = useState(0); // 0 means disabled
-  const [autoSaveTimer, setAutoSaveTimer] = useState(null);
+  const [parsedMarkdown, setParsedMarkdown] = useState('');
 
   const navigate = useNavigate();
 
@@ -36,7 +42,10 @@ const DocumentPage = () => {
       return;
     }
     try {
-      await saveDocument(currentDocument._id, markdown);
+      await saveDocument(
+        currentDocument._id,
+        textAreaRef.current?.value || markdown,
+      );
     } catch (err) {
       console.error('Error saving document:', err);
     }
@@ -67,7 +76,10 @@ const DocumentPage = () => {
       return;
     }
     try {
-      await saveDocument(currentDocument._id, markdown);
+      await saveDocument(
+        currentDocument._id,
+        textAreaRef.current?.value || markdown,
+      );
       const res = await updateCollaboration(currentDocument._id);
 
       if (!res) {
@@ -79,6 +91,7 @@ const DocumentPage = () => {
   };
 
   const handleContentChange = (e) => {
+    if (textAreaRef.current) textAreaRef.current.value = e.target.value;
     setMarkdown(e.target.value);
     setLocalUpdate(true);
   };
@@ -93,29 +106,41 @@ const DocumentPage = () => {
   const sendContentUpdate = useCallback(
     debounce((content) => {
       if (socket.connected && currentDocument?.collaborative) {
+        const patchText = createPatch(lastSentContent, content);
+        if (!patchText) return;
         socket.emit('update-doc', {
           docId: currentDocument._id,
-          content,
+          patch: patchText,
         });
+        lastSentContent = content; // Update the last sent content
       }
     }, 200),
     [currentDocument],
   );
   useEffect(() => {
+    if (fromRemoteRef.current) {
+      fromRemoteRef.current = false;
+      return;
+    }
     if (localUpdate && currentDocument?.collaborative) {
-      sendContentUpdate(markdown);
+      sendContentUpdate(textAreaRef.current?.value || markdown);
       setLocalUpdate(false);
     }
   }, [
     markdown,
+    textAreaRef,
     localUpdate,
     sendContentUpdate,
     currentDocument?.collaborative,
   ]);
   useEffect(() => {
     marked.setOptions({ breaks: true, gfm: true });
+    if (textAreaRef.current) textAreaRef.current.focus();
 
     return () => {
+      textAreaRef.current = null;
+      setMarkdown('');
+      resetDocument();
       if (socket.connected) {
         socket.emit('leave-doc', {
           docId: currentDocument?._id || id,
@@ -131,6 +156,8 @@ const DocumentPage = () => {
 
   useEffect(() => {
     if (currentDocument?.content) {
+      if (textAreaRef.current)
+        textAreaRef.current.value = currentDocument.content;
       setMarkdown(currentDocument.content);
     }
   }, [currentDocument]);
@@ -138,14 +165,24 @@ const DocumentPage = () => {
   useEffect(() => {
     const fetchDocument = async () => {
       try {
+        if (textAreaRef.current)
+          textAreaRef.current.value = currentDocument?.content || '';
+        setMarkdown(currentDocument?.content || '');
         await loadDocument(id);
       } catch (err) {
         setError(true);
-        console.error('Error loading document:', err);
       }
     };
 
     fetchDocument();
+    return () => {
+      setError(false);
+      if (textAreaRef.current) textAreaRef.current.value = '';
+      textAreaRef.current = null;
+      setMarkdown('');
+      setLocalUpdate(false);
+      resetDocument();
+    };
   }, [id, loadDocument]);
 
   // Document is loaded for the first time and its authenticated user
@@ -156,29 +193,26 @@ const DocumentPage = () => {
     if (!currentDocument.collaborative) {
       return;
     }
-
-    // Setup socket connection and listeners
+    if (textAreaRef.current)
+      textAreaRef.current.value = currentDocument.content || '';
+    setMarkdown(currentDocument.content || '');
+    lastSentContent = currentDocument.content || '';
     const setupSocketConnection = () => {
-      // Remove any existing listeners to prevent duplicates
       socket.off('doc-users');
       socket.off('session-terminated');
       socket.off('joined-doc');
       socket.off('left-doc');
 
-      // Connect if not already connected
       if (!socket.connected) {
         socket.connect();
       }
 
-      // Join document room
       socket.emit('join-doc', {
         docId: currentDocument._id,
         user: authUser,
       });
 
-      // Setup event listeners
       socket.on('joined-doc', (data) => {
-        // Don't show toast for the current user
         if (data.user._id !== authUser._id) {
           toast.success(`${data.user.username} joined the document!`);
         }
@@ -197,18 +231,49 @@ const DocumentPage = () => {
           'This collaborative session has been terminated by the owner.',
         );
         navigate('/');
+        resetDocument();
       });
 
-      socket.on('doc-updated', (data) => {
-        if (data.docId === currentDocument._id && !localUpdate) {
-          setMarkdown(data.content);
+      socket.on('doc-updated', ({ docId, patch }) => {
+        if (docId === currentDocument._id && !localUpdate) {
+          if (textAreaRef.current) {
+            const textarea = textAreaRef.current;
+            if (!textarea) return;
+            const currentText = textarea.value;
+            const { newText, success } = applyPatch(currentText, patch);
+
+            if (!success) return;
+
+            // Save cursor position and scroll position
+            const prevStart = textarea.selectionStart;
+            const prevEnd = textarea.selectionEnd;
+            const prevScrollTop = textarea.scrollTop;
+
+            fromRemoteRef.current = true;
+            lastSentContent = newText;
+            textAreaRef.current.value = newText;
+
+            // Set markdown with setTimeout to ensure it happens in the next event cycle
+            setTimeout(() => {
+              setMarkdown(newText);
+            }, 0);
+
+            // Use requestAnimationFrame to ensure the DOM has been updated
+            requestAnimationFrame(() => {
+              if (textAreaRef.current) {
+                textAreaRef.current.selectionStart = prevStart;
+                textAreaRef.current.selectionEnd = prevEnd;
+                textAreaRef.current.scrollTop = prevScrollTop;
+                textAreaRef.current.focus();
+              }
+            });
+          }
         }
       });
     };
 
     setupSocketConnection();
 
-    // Cleanup function
     return () => {
       if (socket.connected) {
         socket.emit('leave-doc', {
@@ -219,47 +284,14 @@ const DocumentPage = () => {
     };
   }, [currentDocument?._id, currentDocument?.collaborative, authUser]);
 
-  // Handle auto-save interval change
-  const handleAutoSaveChange = (e) => {
-    const value = parseInt(e.target.value);
-    setAutoSaveInterval(value);
-
-    // Clear existing timer if any
-    if (autoSaveTimer) {
-      clearInterval(autoSaveTimer);
-      setAutoSaveTimer(null);
-    }
-
-    // If value is not 0 (disabled), set up a new timer
-    if (value > 0) {
-      const seconds =
-        value === 25 ? 5 : value === 50 ? 10 : value === 75 ? 15 : 20;
-      const timer = setInterval(() => {
-        if (
-          authUser &&
-          currentDocument &&
-          authUser._id.toString() === currentDocument.authorId.toString()
-        ) {
-          saveDocument(currentDocument._id, markdown);
-          toast.success(`Document auto-saved (every ${seconds} seconds)`);
-        }
-      }, seconds * 1000);
-
-      setAutoSaveTimer(timer);
-    }
-  };
-
-  // Clean up auto-save timer on unmount
   useEffect(() => {
-    return () => {
-      if (autoSaveTimer) {
-        clearInterval(autoSaveTimer);
-      }
-    };
-  }, [autoSaveTimer]);
+    if (markdown !== undefined) {
+      const html = DOMPurify.sanitize(marked(markdown || ''));
+      setParsedMarkdown(html);
+    }
+  }, [markdown]);
 
   if (error) {
-    console.error('Error loading document IN DOC PAGE:', error);
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <p className="text-error-500">
@@ -269,7 +301,6 @@ const DocumentPage = () => {
     );
   }
   if (isLoading && !currentDocument) {
-    console.log('Loading document...');
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <LoaderCircle className="size-15 animate-spin" />
@@ -344,37 +375,6 @@ const DocumentPage = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-2 md:gap-4">
-          {authUser &&
-            authUser._id.toString() === currentDocument.authorId.toString() && (
-              <div className="w-max max-w-s">
-                <label className="block text-sm font-medium mb-1">
-                  Auto-Save Interval (seconds)
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max="100"
-                  value={autoSaveInterval}
-                  onChange={handleAutoSaveChange}
-                  className="range"
-                  step="25"
-                />
-                <div className="flex justify-between px-2.5 mt-2 text-xs">
-                  <span>|</span>
-                  <span>|</span>
-                  <span>|</span>
-                  <span>|</span>
-                  <span>|</span>
-                </div>
-                <div className="flex justify-between px-2.5 mt-2 text-xs">
-                  <span>Off</span>
-                  <span>5s</span>
-                  <span>10s</span>
-                  <span>15s</span>
-                  <span>20s</span>
-                </div>
-              </div>
-            )}
           <button
             className="btn btn-success"
             disabled={
@@ -408,7 +408,8 @@ const DocumentPage = () => {
               <textarea
                 className="textarea textarea-bordered w-full h-[100vh]"
                 placeholder="Type your document content here..."
-                value={markdown}
+                ref={textAreaRef}
+                defaultValue={markdown}
                 onChange={handleContentChange}
               />
             </div>
@@ -421,10 +422,8 @@ const DocumentPage = () => {
               <h3 className="card-title">Preview</h3>
               <div className="bg-base-200 rounded-box h-[100vh] overflow-auto p-4">
                 <div
-                  className="prose prose-sm max-w-none min-h-[calc(100vh-4rem)] pb-[50vh]"
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(marked(markdown)),
-                  }}
+                  className="prose prose-sm w-full min-h-[calc(100vh-4rem)] pb-[50vh]"
+                  dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
                 />
               </div>
             </div>
