@@ -2,13 +2,15 @@ import { Server as SocketIOServer } from 'socket.io';
 import { UserDocument } from './models/user.model.js';
 import http from 'http';
 import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { applyPatchServer } from './lib/utils.js'; // Assuming this is the correct path to your utility function
 import {
   getDocumentContent,
   setDocumentContent,
   initDocument,
 } from './lib/docCache.js';
-import { get } from 'mongoose';
 
 const app = express();
 // create one HTTP server for the express app and the socket.io server

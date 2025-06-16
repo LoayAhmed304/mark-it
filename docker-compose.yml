@@ -1,0 +1,41 @@
+version: '3'
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    ports:
+      - '27018:27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongodb
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/?authSource=admin
+      - JWT_SECRET="your$_jwt$_$secret_"
+      - CORS_ORIGIN=http://localhost:5173
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '5173:5173'
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  mongo_data:
+    driver: local
