@@ -5,7 +5,7 @@ Built as one of the projects to apply my studying for WebSockets in.
 
 **Feel free to check out my [WebSockets Medium article](https://medium.com/p/d21bc3a362b4). Please keep in mind that these are my personal study notes, not a formal tutorial.**
 
-🌐 Try it now: https://loay.work
+🌐 Try it now: https://mark.loay.work
 
 ### Video Preview
 
