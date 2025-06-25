@@ -10,6 +10,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=password
     volumes:
       - mongo_data:/data/db
+    networks:
+      - app-net
 
   backend:
     container_name: backend
@@ -23,8 +25,11 @@ services:
     environment:
       - PORT=3000
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/?authSource=admin
-      - JWT_SECRET="your$_jwt$_$secret_"
-      - CORS_ORIGIN=http://localhost:5173
+      - JWT_SECRET=helloWorlD2233SS
+      - CORS_ORIGIN=https://mark.loay.work
+    networks:
+      - app-net
+
   frontend:
     container_name: frontend
     build:
@@ -33,9 +38,15 @@ services:
     ports:
       - '5173:5173'
     environment:
-      - VITE_BACKEND_URL=http://localhost:3000
+      - VITE_BACKEND_URL=https://mark.loay.work
       - CHOKIDAR_USEPOLLING=true
+    networks:
+      - app-net
 
 volumes:
   mongo_data:
     driver: local
+
+networks:
+  app-net:
+    driver: bridge
