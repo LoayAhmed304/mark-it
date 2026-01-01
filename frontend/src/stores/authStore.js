@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useDocumentStore } from './documentStore';
 import toast from 'react-hot-toast';
 import { axiosInstance } from '../lib/axios';
+import axios from 'axios';
 import { persist } from 'zustand/middleware';
 
 const docs = [
@@ -68,7 +69,7 @@ export const useAuthStore = create(
       set({ isLoggingIn: true });
       try {
         // Implement login here (API)
-        const response = await axiosInstance.post('/auth/login', formData);
+        const response = await axios.post('https://mark.loay.work/api/auth/login', formData);
         if (response.data.status === 'success') {
           set({ authUser: response.data.data });
           toast.success('Welcome back!');
